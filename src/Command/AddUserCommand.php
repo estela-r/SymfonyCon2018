@@ -126,41 +126,10 @@ class AddUserCommand extends Command
             'Now we\'ll ask you for the value of all the missing command arguments.',
         ]);
 
-        // Ask for the username if it's not defined
-        $username = $input->getArgument('username');
-        if (null !== $username) {
-            $this->io->text(' > <info>Username</info>: '.$username);
-        } else {
-            $username = $this->io->ask('Username', null, [$this->validator, 'validateUsername']);
-            $input->setArgument('username', $username);
-        }
-
-        // Ask for the password if it's not defined
-        $password = $input->getArgument('password');
-        if (null !== $password) {
-            $this->io->text(' > <info>Password</info>: '.str_repeat('*', mb_strlen($password)));
-        } else {
-            $password = $this->io->askHidden('Password (your type will be hidden)', [$this->validator, 'validatePassword']);
-            $input->setArgument('password', $password);
-        }
-
-        // Ask for the email if it's not defined
-        $email = $input->getArgument('email');
-        if (null !== $email) {
-            $this->io->text(' > <info>Email</info>: '.$email);
-        } else {
-            $email = $this->io->ask('Email', null, [$this->validator, 'validateEmail']);
-            $input->setArgument('email', $email);
-        }
-
-        // Ask for the full name if it's not defined
-        $fullName = $input->getArgument('full-name');
-        if (null !== $fullName) {
-            $this->io->text(' > <info>Full Name</info>: '.$fullName);
-        } else {
-            $fullName = $this->io->ask('Full Name', null, [$this->validator, 'validateFullName']);
-            $input->setArgument('full-name', $fullName);
-        }
+        $this->setUsername($input);
+        $this->setPassword($input);
+        $this->setupEmail($input);
+        $this->setupFullName($input);
     }
 
     /**
@@ -255,5 +224,92 @@ provide the missing values:
   <info>php %command.full_name%</info>
 
 HELP;
+    }
+
+    /**
+     * @param InputInterface $input
+     * @param                $username
+     * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
+     */
+    protected function setUsername(InputInterface $input): void
+    {
+        $username = $input->getArgument('username');
+
+        if (null !== $username) {
+            $this->io->text(' > <info>Username</info>: ' . $username);
+
+            return;
+        }
+
+        $username = $this->io->ask('Username', null, [
+            $this->validator,
+            'validateUsername',
+        ]);
+
+        $input->setArgument('username', $username);
+    }
+
+    /**
+     * @param InputInterface $input
+     * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
+     */
+    protected function setPassword(InputInterface $input): void
+    {
+        // Ask for the password if it's not defined
+        $password = $input->getArgument('password');
+
+        if (null !== $password) {
+            $this->io->text(' > <info>Password</info>: ' . str_repeat('*', mb_strlen($password)));
+
+            return;
+        }
+
+        $password = $this->io->askHidden('Password (your type will be hidden)', [
+            $this->validator,
+            'validatePassword',
+        ]);
+        $input->setArgument('password', $password);
+    }
+
+    /**
+     * @param InputInterface $input
+     * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
+     */
+    protected function setupEmail(InputInterface $input): void
+    {
+        // Ask for the email if it's not defined
+        $email = $input->getArgument('email');
+        if (null !== $email) {
+            $this->io->text(' > <info>Email</info>: ' . $email);
+
+            return;
+        }
+
+        $email = $this->io->ask('Email', null, [
+            $this->validator,
+            'validateEmail',
+        ]);
+        $input->setArgument('email', $email);
+    }
+
+    /**
+     * @param InputInterface $input
+     * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
+     */
+    protected function setupFullName(InputInterface $input): void
+    {
+        // Ask for the full name if it's not defined
+        $fullName = $input->getArgument('full-name');
+        if (null !== $fullName) {
+            $this->io->text(' > <info>Full Name</info>: ' . $fullName);
+
+            return;
+        }
+
+        $fullName = $this->io->ask('Full Name', null, [
+            $this->validator,
+            'validateFullName',
+        ]);
+        $input->setArgument('full-name', $fullName);
     }
 }
