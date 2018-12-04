@@ -12,6 +12,9 @@
 namespace App\Entity;
 
 use App\Role\Role;
+use App\Role\RoleCollection;
+use App\Role\UserRole;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -121,17 +124,18 @@ class User implements UserInterface, \Serializable
         return array_unique($roles);
     }
 
-    public function setRoles(array $roles): void
+    public function getRolesAsRoles(): RoleCollection
     {
-        $this->roles = [];
-
-        foreach ($roles as $role) {
-            if (!$role instanceof Role) {
-                throw new \LogicException('What is happening?!?!?!?');
-            }
-
-            $this->roles[] = (string) $role;
+        if (empty($this->roles)) {
+            return new RoleCollection([new UserRole()]);
         }
+
+        return new RoleCollection($this->roles);
+    }
+
+    public function setRoles(RoleCollection $roles): void
+    {
+        $this->roles = $roles->toArray();
     }
 
     /**
