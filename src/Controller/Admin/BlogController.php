@@ -71,43 +71,18 @@ class BlogController extends AbstractController
      */
     public function new(Request $request): Response
     {
-        $post = new Post();
-        $post->setAuthor($this->getUser());
+        $post = $this->constructPost();
 
-        // See https://symfony.com/doc/current/book/forms.html#submitting-forms-with-multiple-buttons
         $form = $this->createForm(PostType::class, $post)
-            ->add('saveAndCreateNew', SubmitType::class);
+                     ->add('saveAndCreateNew', SubmitType::class);
 
         $form->handleRequest($request);
 
-        // the isSubmitted() method is completely optional because the other
-        // isValid() method already checks whether the form is submitted.
-        // However, we explicitly add it to improve code readability.
-        // See https://symfony.com/doc/current/best_practices/forms.html#handling-form-submits
-        if ($form->isSubmitted() && $form->isValid()) {
-            $post->setSlug(Slugger::slugify($post->getTitle()));
-
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($post);
-            $em->flush();
-
-            // Flash messages are used to notify the user about the result of the
-            // actions. They are deleted automatically from the session as soon
-            // as they are accessed.
-            // See https://symfony.com/doc/current/book/controller.html#flash-messages
-            $this->addFlash('success', 'post.created_successfully');
-
-            if ($form->get('saveAndCreateNew')->isClicked()) {
-                return $this->redirectToRoute('admin_post_new');
-            }
-
-            return $this->redirectToRoute('admin_post_index');
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            return $this->returnInvalidFormResponse($post, $form);
         }
 
-        return $this->render('admin/blog/new.html.twig', [
-            'post' => $post,
-            'form' => $form->createView(),
-        ]);
+        return $this->submitValidNewPost($post, $form);
     }
 
     /**
@@ -117,8 +92,6 @@ class BlogController extends AbstractController
      */
     public function show(Post $post): Response
     {
-        // This security check can also be performed
-        // using an annotation: @IsGranted("show", subject="post", message="Posts can only be shown to their authors.")
         $this->denyAccessUnlessGranted('show', $post, 'Posts can only be shown to their authors.');
 
         return $this->render('admin/blog/show.html.twig', [
@@ -138,18 +111,10 @@ class BlogController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $post->setSlug(Slugger::slugify($post->getTitle()));
-            $this->getDoctrine()->getManager()->flush();
-
-            $this->addFlash('success', 'post.updated_successfully');
-
-            return $this->redirectToRoute('admin_post_edit', ['id' => $post->getId()]);
+            return $this->modifyPost($post);
         }
 
-        return $this->render('admin/blog/edit.html.twig', [
-            'post' => $post,
-            'form' => $form->createView(),
-        ]);
+        return $this->returnUnsuccessfulEditView($post, $form);
     }
 
     /**
@@ -164,17 +129,120 @@ class BlogController extends AbstractController
             return $this->redirectToRoute('admin_post_index');
         }
 
-        // Delete the tags associated with this blog post. This is done automatically
-        // by Doctrine, except for SQLite (the database used in this application)
-        // because foreign key support is not enabled by default in SQLite
         $post->getTags()->clear();
 
-        $em = $this->getDoctrine()->getManager();
-        $em->remove($post);
-        $em->flush();
+        $this->persistPostDeletion($post);
 
         $this->addFlash('success', 'post.deleted_successfully');
 
         return $this->redirectToRoute('admin_post_index');
+    }
+
+    /**
+     * @return Post
+     * @throws \LogicException
+     */
+    protected function constructPost(): Post
+    {
+        $post = new Post();
+        $post->setAuthor($this->getUser());
+
+        return $post;
+    }
+
+    /**
+     * @param $post
+     * @throws \LogicException
+     */
+    protected function persistPost($post): void
+    {
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($post);
+        $em->flush();
+    }
+
+    /**
+     * @param $form
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    protected function redirectUser($form): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        if ($form->get('saveAndCreateNew')
+                 ->isClicked()) {
+            return $this->redirectToRoute('admin_post_new');
+        }
+
+        return $this->redirectToRoute('admin_post_index');
+    }
+
+    /**
+     * @param $post
+     * @param $form
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse
+     * @throws \LogicException
+     */
+    protected function submitValidNewPost($post, $form): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $post->setSlug(Slugger::slugify($post->getTitle()));
+
+        $this->persistPost($post);
+
+        $this->addFlash('success', 'post.created_successfully');
+
+        return $this->redirectUser($form);
+    }
+
+    /**
+     * @param Post $post
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse
+     * @throws \LogicException
+     */
+    protected function modifyPost(Post $post): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $post->setSlug(Slugger::slugify($post->getTitle()));
+        $this->getDoctrine()->getManager()->flush();
+
+        $this->addFlash('success', 'post.updated_successfully');
+
+        return $this->redirectToRoute('admin_post_edit', ['id' => $post->getId()]);
+    }
+
+    /**
+     * @param Post $post
+     * @throws \LogicException
+     */
+    protected function persistPostDeletion(Post $post): void
+    {
+        $em = $this->getDoctrine()->getManager();
+        $em->remove($post);
+        $em->flush();
+    }
+
+    /**
+     * @param $post
+     * @param $form
+     * @return Response
+     * @throws \LogicException
+     */
+    protected function returnInvalidFormResponse($post, $form): Response
+    {
+        return $this->render('admin/blog/new.html.twig', [
+            'post' => $post,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    /**
+     * @param Post $post
+     * @param      $form
+     * @return Response
+     * @throws \LogicException
+     */
+    protected function returnUnsuccessfulEditView(Post $post, $form): Response
+    {
+        return $this->render('admin/blog/edit.html.twig', [
+            'post' => $post,
+            'form' => $form->createView(),
+        ]);
     }
 }
