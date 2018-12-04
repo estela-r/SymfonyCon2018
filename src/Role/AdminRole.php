@@ -5,7 +5,7 @@ namespace App\Role;
 
 class AdminRole extends Role
 {
-    public function getName()
+    public function getName(): string
     {
         return 'ROLE_ADMIN';
     }

@@ -11,6 +11,7 @@
 
 namespace App\Entity;
 
+use App\Role\Role;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -125,6 +126,10 @@ class User implements UserInterface, \Serializable
         $this->roles = [];
 
         foreach ($roles as $role) {
+            if (!$role instanceof Role) {
+                throw new \LogicException('What is happening?!?!?!?');
+            }
+
             $this->roles[] = (string) $role;
         }
     }
