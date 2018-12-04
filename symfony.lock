@@ -152,6 +152,9 @@
             "ref": "fb7e19da7f013d0d422fa9bce16f5c510e27609b"
         }
     },
+    "sensiolabs-de/rich-model-forms-bundle": {
+        "version": "0.1-dev"
+    },
     "sensiolabs/security-checker": {
         "version": "4.0",
         "recipe": {
