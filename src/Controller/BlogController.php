@@ -17,6 +17,7 @@ use App\Events;
 use App\Form\CommentType;
 use App\Repository\ChainPostRepository;
 use App\Repository\PostRepository;
+use App\Repository\PostRepositoryInterface;
 use App\Repository\RedisPostRepository;
 use App\Repository\TagRepository;
 use App\Utils\CommentConstructor;
@@ -56,11 +57,16 @@ class BlogController extends AbstractController
      */
     private $redisPostRepository;
 
-    public function __construct(CommentService $commentService, CommentConstructor $commentConstructor, RedisPostRepository $redisPostRepository)
+    /**
+     * @var PostRepositoryFactory
+     */
+    private $postRepository;
+
+    public function __construct(CommentService $commentService, CommentConstructor $commentConstructor, PostRepositoryInterface $postRepository)
     {
         $this->commentService = $commentService;
         $this->commentConstructor = $commentConstructor;
-        $this->redisPostRepository = $redisPostRepository;
+        $this->postRepository;
     }
 
     /**
@@ -97,10 +103,6 @@ class BlogController extends AbstractController
      */
     public function postShow(string $postName): Response
     {
-        $postRepo = new ChainPostRepository();
-        $postRepo->add($this->redisPostRepository);
-        $postRepo->add($this->getDoctrine()->getRepository('Post'));
-
         $postRepo->getOneBySlug($postName);
 
         // Symfony's 'dump()' function is an improved version of PHP's 'var_dump()' but

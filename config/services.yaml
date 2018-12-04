@@ -54,3 +54,11 @@ services:
         arguments:
             - '@Parsedown'
             - '@HTMLPurifier'
+
+    App\Controller\BlogController:
+        class: 'App\Controller\BlogController'
+        arguments:
+            - "@=service('PostRepositoryFactory').getRepository()"
+
+    PostRepositoryFactory:
+        class: 'App\Factory\PostRepositoryFactory'
