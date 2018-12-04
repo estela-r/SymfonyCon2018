@@ -67,7 +67,7 @@ class Comment
      */
     private $author;
 
-    public function __construct(string $content, User $author, Post $post)
+    public function __construct(?string $content, ?User $author, ?Post $post)
     {
         $this->publishedAt = new \DateTime();
         $this->content     = $content;
