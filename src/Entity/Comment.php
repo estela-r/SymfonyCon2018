@@ -17,13 +17,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * @ORM\Entity
  * @ORM\Table(name="symfony_demo_comment")
- *
  * Defines the properties of the Comment entity to represent the blog comments.
  * See https://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
- *
  * Tip: if you have an existing database, you can generate these entity class automatically.
  * See https://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
- *
  * @author Ryan Weaver <weaverryan@gmail.com>
  * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  */
@@ -31,7 +28,6 @@ class Comment
 {
     /**
      * @var int
-     *
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
@@ -40,7 +36,6 @@ class Comment
 
     /**
      * @var Post
-     *
      * @ORM\ManyToOne(targetEntity="Post", inversedBy="comments")
      * @ORM\JoinColumn(nullable=false)
      */
@@ -48,7 +43,6 @@ class Comment
 
     /**
      * @var string
-     *
      * @ORM\Column(type="text")
      * @Assert\NotBlank(message="comment.blank")
      * @Assert\Length(
@@ -62,22 +56,23 @@ class Comment
 
     /**
      * @var \DateTime
-     *
      * @ORM\Column(type="datetime")
      */
     private $publishedAt;
 
     /**
      * @var User
-     *
      * @ORM\ManyToOne(targetEntity="App\Entity\User")
      * @ORM\JoinColumn(nullable=false)
      */
     private $author;
 
-    public function __construct()
+    public function __construct(string $content, User $author, Post $post)
     {
         $this->publishedAt = new \DateTime();
+        $this->content     = $content;
+        $this->author      = $author;
+        $this->post        = $post;
     }
 
     /**
